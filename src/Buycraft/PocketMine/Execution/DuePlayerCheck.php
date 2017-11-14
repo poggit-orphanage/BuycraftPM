@@ -8,100 +8,95 @@ use Buycraft\PocketMine\Util\RunAsyncTask;
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 
-class DuePlayerCheck extends AsyncTask
-{
-    const PLAYERS_PER_PAGE = 250;
-    const FALLBACK_DELAY = 300;
-    const MAXIMUM_ONLINE_PLAYERS_TO_PROCESS = 60;
-    const DELAY_BETWEEN_PLAYERS = 100;
+class DuePlayerCheck extends AsyncTask{
+	const PLAYERS_PER_PAGE = 250;
+	const FALLBACK_DELAY = 300;
+	const MAXIMUM_ONLINE_PLAYERS_TO_PROCESS = 60;
+	const DELAY_BETWEEN_PLAYERS = 100;
 
-    private $pluginApi;
-    private $allowReschedule;
+	private $pluginApi;
+	private $allowReschedule;
 
-    /**
-     * DuePlayerCheck constructor.
-     * @param PluginApi $pluginApi
-     * @param bool $allowReschedule
-     */
-    public function __construct(PluginApi $pluginApi, bool $allowReschedule)
-    {
-        $this->pluginApi = $pluginApi;
-        $this->allowReschedule = $allowReschedule;
-    }
+	/**
+	 * DuePlayerCheck constructor.
+	 * @param PluginApi $pluginApi
+	 * @param bool      $allowReschedule
+	 */
+	public function __construct(PluginApi $pluginApi, bool $allowReschedule){
+		$this->pluginApi = $pluginApi;
+		$this->allowReschedule = $allowReschedule;
+	}
 
-    /**
-     * Actions to execute when run
-     *
-     * @return void
-     */
-    public function onRun()
-    {
-        $page = 1;
-        $allDue = array();
+	/**
+	 * Actions to execute when run
+	 *
+	 * @return void
+	 */
+	public function onRun(){
+		$page = 1;
+		$allDue = array();
 
-        do {
-            // Sleep for a while between fetches.
-            if ($page > 1) {
-                sleep(mt_rand(5, 15) / 10);
-            }
-            
-            $result = $this->pluginApi->basicGet("/queue?limit=" . self::PLAYERS_PER_PAGE . "&page=" . $page);
+		do{
+			// Sleep for a while between fetches.
+			if($page > 1){
+				sleep(mt_rand(5, 15) / 10);
+			}
 
-            if (count($result->players) == 0) {
-                break;
-            }
+			$result = $this->pluginApi->basicGet("/queue?limit=" . self::PLAYERS_PER_PAGE . "&page=" . $page);
 
-            foreach ($result->players as $player) {
-                $allDue[strtolower($player->name)] = $player;
-            }
+			if(count($result->players) == 0){
+				break;
+			}
 
-            $page++;
-        } while ($result->meta->more);
+			foreach($result->players as $player){
+				$allDue[strtolower($player->name)] = $player;
+			}
 
-        $this->setResult(array(
-            'all_due' => $allDue,
-            'next_delay' => $result->meta->next_check ?? self::FALLBACK_DELAY,
-            'execute_offline' => $result->meta->execute_offline
-        ));
-    }
+			$page++;
+		}while($result->meta->more);
 
-    public function onCompletion(Server $server)
-    {
-        $result = $this->getResult();
-        BuycraftPlugin::getInstance()->getLogger()->info("Found " . count($result['all_due']) . " due player(s).");
-        BuycraftPlugin::getInstance()->setAllDue($result['all_due']);
+		$this->setResult(array(
+			'all_due' => $allDue,
+			'next_delay' => $result->meta->next_check ?? self::FALLBACK_DELAY,
+			'execute_offline' => $result->meta->execute_offline
+		));
+	}
 
-        // See if we can execute some commands right now
-        if ($result['execute_offline']) {
-            BuycraftPlugin::getInstance()->getLogger()->info("Executing commands that can be run now...");
-            $server->getScheduler()->scheduleAsyncTask(new ImmediateExecutionRunner($this->pluginApi));
-        }
+	public function onCompletion(Server $server){
+		$result = $this->getResult();
+		BuycraftPlugin::getInstance()->getLogger()->info("Found " . count($result['all_due']) . " due player(s).");
+		BuycraftPlugin::getInstance()->setAllDue($result['all_due']);
 
-        // Check for player command execution we can do.
-        $canProcessNow = array_slice(array_filter($result['all_due'], function ($due) use ($server) {
-            return $server->getPlayerExact($due->name) != NULL;
-        }), 0, self::MAXIMUM_ONLINE_PLAYERS_TO_PROCESS);
+		// See if we can execute some commands right now
+		if($result['execute_offline']){
+			BuycraftPlugin::getInstance()->getLogger()->info("Executing commands that can be run now...");
+			$server->getScheduler()->scheduleAsyncTask(new ImmediateExecutionRunner($this->pluginApi));
+		}
 
-        if (count($canProcessNow) > 0) {
-            BuycraftPlugin::getInstance()->getLogger()->info("Running commands for " . count($canProcessNow) . " online player(s)...");
+		// Check for player command execution we can do.
+		$canProcessNow = array_slice(array_filter($result['all_due'], function($due) use ($server){
+			return $server->getPlayerExact($due->name) != NULL;
+		}), 0, self::MAXIMUM_ONLINE_PLAYERS_TO_PROCESS);
 
-            $at = 1;
-            foreach ($canProcessNow as $due) {
-                $this->scheduleDelayedAsyncTask(new PlayerCommandExecutor($this->pluginApi, $due), 10 * $at++);
-            }
-        }
+		if(count($canProcessNow) > 0){
+			BuycraftPlugin::getInstance()->getLogger()->info("Running commands for " . count($canProcessNow) . " online player(s)...");
 
-        // Reschedule this task if desired.
-        if ($this->allowReschedule) {
-            // PocketMine-MP doesn't allow us to directly delay the eventual execution of an asynchronous task, so
-            // a workaround must be used.
-            $nextDelay = $result['next_delay'];
-            $this->scheduleDelayedAsyncTask(new DuePlayerCheck($this->pluginApi, true), $nextDelay * 20);
-        }
-    }
+			$at = 1;
+			foreach($canProcessNow as $due){
+				$this->scheduleDelayedAsyncTask(new PlayerCommandExecutor($this->pluginApi, $due), 10 * $at++);
+			}
+		}
 
-    private function scheduleDelayedAsyncTask($task, $delay)
-    {
-        Server::getInstance()->getScheduler()->scheduleDelayedTask(new RunAsyncTask(BuycraftPlugin::getInstance(), $task), $delay);
-    }
+		// Reschedule this task if desired.
+		if($this->allowReschedule){
+			// PocketMine-MP doesn't allow us to directly delay the eventual execution of an asynchronous task, so
+			// a workaround must be used.
+			$nextDelay = $result['next_delay'];
+			$this->scheduleDelayedAsyncTask(new DuePlayerCheck($this->pluginApi, true), $nextDelay * 20);
+		}
+	}
+
+	private function scheduleDelayedAsyncTask($task, $delay){
+		Server::getInstance()->getScheduler()->scheduleDelayedTask(new RunAsyncTask(BuycraftPlugin::getInstance(), $task), $delay);
+	}
 }
