@@ -14,9 +14,9 @@ class DeleteCommandsAsyncTask extends AsyncTask
     /**
      * DeleteCommandsTask constructor.
      * @param PluginApi $pluginApi
-     * @param $commands array
+     * @param array $commands
      */
-    public function __construct(PluginApi $pluginApi, $commands)
+    public function __construct(PluginApi $pluginApi, array $commands)
     {
         $this->pluginApi = $pluginApi;
         $this->commands = $commands;
@@ -24,10 +24,6 @@ class DeleteCommandsAsyncTask extends AsyncTask
 
     /**
      * Actions to execute when run
-     *
-     * @param $currentTick
-     *
-     * @return void
      */
     public function onRun()
     {

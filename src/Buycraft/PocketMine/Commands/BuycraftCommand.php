@@ -31,9 +31,9 @@ class BuycraftCommand extends Command
      * @param string $commandLabel
      * @param string[] $args
      *
-     * @return mixed
+     * @return bool
      */
-    public function execute(CommandSender $sender, string$commandLabel, array $args) :bool
+    public function execute(CommandSender $sender, string $commandLabel, array $args) : bool
     {
         if (!$sender->hasPermission('buycraft.admin')) {
             $sender->sendMessage(TextFormat::RED . "You don't have permission to use Buycraft administrative commands.");

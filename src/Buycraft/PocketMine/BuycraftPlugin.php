@@ -81,7 +81,7 @@ class BuycraftPlugin extends PluginBase
 
     private function startInitialTasks()
     {
-        $this->commandExecutionTask = new CommandExecutor($this);
+        $this->commandExecutionTask = new CommandExecutor();
         $this->getServer()->getScheduler()->scheduleRepeatingTask($this->commandExecutionTask, 1);
         $this->deleteCommandsTask = new DeleteCommandsTask($this->pluginApi);
         $this->getServer()->getScheduler()->scheduleRepeatingTask($this->deleteCommandsTask, 20);

@@ -13,7 +13,7 @@ class ImmediateExecutionRunner extends AsyncTask
 
     /**
      * ImmediateExecutionRunner constructor.
-     * @param $pluginApi
+     * @param PluginApi $pluginApi
      */
     public function __construct(PluginApi $pluginApi)
     {
