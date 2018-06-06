@@ -70,7 +70,7 @@ class DuePlayerCheck extends AsyncTask{
 		// See if we can execute some commands right now
 		if($result['execute_offline']){
 			BuycraftPlugin::getInstance()->getLogger()->info("Executing commands that can be run now...");
-			$server->getScheduler()->scheduleAsyncTask(new ImmediateExecutionRunner($this->pluginApi));
+			$server->getAsyncPool()->submitTask(new ImmediateExecutionRunner($this->pluginApi));
 		}
 
 		// Check for player command execution we can do.
@@ -97,6 +97,6 @@ class DuePlayerCheck extends AsyncTask{
 	}
 
 	private function scheduleDelayedAsyncTask($task, $delay){
-		Server::getInstance()->getScheduler()->scheduleDelayedTask(new RunAsyncTask(BuycraftPlugin::getInstance(), $task), $delay);
+		BuycraftPlugin::getInstance()->getScheduler()->scheduleDelayedTask(new RunAsyncTask(BuycraftPlugin::getInstance(), $task), $delay);
 	}
 }

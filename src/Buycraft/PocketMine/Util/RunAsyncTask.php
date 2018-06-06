@@ -4,10 +4,10 @@ namespace Buycraft\PocketMine\Util;
 
 
 use Buycraft\PocketMine\BuycraftPlugin;
-use pocketmine\scheduler\PluginTask;
+use pocketmine\scheduler\Task;
 use pocketmine\Server;
 
-class RunAsyncTask extends PluginTask{
+class RunAsyncTask extends Task{
 	private $asyncTask;
 
 	/**
@@ -16,7 +16,7 @@ class RunAsyncTask extends PluginTask{
 	 * @param $asyncTask
 	 */
 	public function __construct(BuycraftPlugin $plugin, $asyncTask){
-		parent::__construct($plugin);
+		$this->plugin = $plugin;
 		$this->asyncTask = $asyncTask;
 	}
 
@@ -28,6 +28,6 @@ class RunAsyncTask extends PluginTask{
 	 * @return void
 	 */
 	public function onRun(int $currentTick){
-		Server::getInstance()->getScheduler()->scheduleAsyncTask($this->asyncTask);
+		Server::getInstance()->getAsyncPool()->submitTask($this->asyncTask);
 	}
 }

@@ -8,6 +8,7 @@ use Buycraft\PocketMine\Execution\DeleteCommandsTask;
 use Buycraft\PocketMine\Execution\DuePlayerCheck;
 use Buycraft\PocketMine\Util\AnalyticsSend;
 use pocketmine\plugin\PluginBase;
+use pocketmine\Server;
 
 class BuycraftPlugin extends PluginBase{
 	private static $instance;
@@ -75,10 +76,10 @@ class BuycraftPlugin extends PluginBase{
 
 	private function startInitialTasks(){
 		$this->commandExecutionTask = new CommandExecutor();
-		$this->getServer()->getScheduler()->scheduleRepeatingTask($this->commandExecutionTask, 1);
+		$this->getScheduler()->scheduleRepeatingTask($this->commandExecutionTask, 1);
 		$this->deleteCommandsTask = new DeleteCommandsTask($this->pluginApi);
-		$this->getServer()->getScheduler()->scheduleRepeatingTask($this->deleteCommandsTask, 20);
-		$this->getServer()->getScheduler()->scheduleAsyncTask(new DuePlayerCheck($this->pluginApi, true));
+		$this->getScheduler()->scheduleRepeatingTask($this->deleteCommandsTask, 20);
+		Server::getInstance()->getAsyncPool()->submitTask(new DuePlayerCheck($this->pluginApi, true));
 
 		AnalyticsSend::sendAnalytics($this);
 	}
@@ -131,7 +132,7 @@ class BuycraftPlugin extends PluginBase{
 	 */
 	public function changeApi(PluginApi $newApi, $information){
 		$this->pluginApi = $newApi;
-		$this->getServer()->getScheduler()->cancelTasks($this);
+		$this->getScheduler()->cancelTasks($this);
 		$this->startInitialTasks();
 
 		// change information if required (for secret command)

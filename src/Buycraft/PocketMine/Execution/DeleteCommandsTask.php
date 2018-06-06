@@ -5,9 +5,10 @@ namespace Buycraft\PocketMine\Execution;
 
 use Buycraft\PocketMine\BuycraftPlugin;
 use Buycraft\PocketMine\PluginApi;
-use pocketmine\scheduler\PluginTask;
+use pocketmine\scheduler\Task;
+use pocketmine\Server;
 
-class DeleteCommandsTask extends PluginTask{
+class DeleteCommandsTask extends Task{
 	const MAXIMUM_COMMANDS_TO_POST = 100;
 
 	private $commandIds = array();
@@ -18,7 +19,7 @@ class DeleteCommandsTask extends PluginTask{
 	 * @param $pluginApi
 	 */
 	public function __construct(PluginApi $pluginApi){
-		parent::__construct(BuycraftPlugin::getInstance());
+		$this->plugin = BuycraftPlugin::getInstance();
 		$this->pluginApi = $pluginApi;
 	}
 
@@ -42,7 +43,7 @@ class DeleteCommandsTask extends PluginTask{
 		}
 
 		if(isset($toPost) && count($toPost) > 0){
-			BuycraftPlugin::getInstance()->getServer()->getScheduler()->scheduleAsyncTask(new DeleteCommandsAsyncTask($this->pluginApi, $toPost));
+			Server::getInstance()->getAsyncPool()->submitTask(new DeleteCommandsAsyncTask($this->pluginApi, $toPost));
 		}
 	}
 

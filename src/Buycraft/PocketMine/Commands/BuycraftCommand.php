@@ -7,6 +7,7 @@ use Buycraft\PocketMine\BuycraftPlugin;
 use Buycraft\PocketMine\Execution\DuePlayerCheck;
 use Buycraft\PocketMine\Util\FinalizeReportTask;
 use Buycraft\PocketMine\Util\ReportUtil;
+use pocketmine\Server;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\command\ConsoleCommandSender;
@@ -56,7 +57,7 @@ class BuycraftCommand extends Command{
 
 				$secret = $args[1];
 
-				$this->plugin->getServer()->getScheduler()->scheduleAsyncTask(new SecretVerificationTask($secret, $this->plugin->getDataFolder()));
+				Server::getInstance()->getAsyncPool()->submitTask(new SecretVerificationTask($secret, $this->plugin->getDataFolder()));
 				break;
 			case "forcecheck":
 				if(count($args) != 1){
@@ -69,7 +70,7 @@ class BuycraftCommand extends Command{
 					return true;
 				}
 
-				$this->plugin->getServer()->getScheduler()->scheduleAsyncTask(new DuePlayerCheck($this->plugin->getPluginApi(), false));
+				Server::getInstance()->getAsyncPool()->submitTask(new DuePlayerCheck($this->plugin->getPluginApi(), false));
 				$sender->sendMessage(TextFormat::GREEN . "Force check successfully queued.");
 				break;
 			case "info":
@@ -96,7 +97,7 @@ class BuycraftCommand extends Command{
 
 				$sender->sendMessage(TextFormat::YELLOW . "Generating report, please wait...");
 				$lines = ReportUtil::generateBaseReport();
-				$this->plugin->getServer()->getScheduler()->scheduleAsyncTask(new FinalizeReportTask($lines));
+				Server::getInstance()->getAsyncPool()->submitTask(new FinalizeReportTask($lines));
 				break;
 		}
 

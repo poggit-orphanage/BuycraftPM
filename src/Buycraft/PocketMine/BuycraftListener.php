@@ -15,7 +15,7 @@ class BuycraftListener implements Listener{
 			unset(BuycraftPlugin::getInstance()->getAllDue()[$lowerName]);
 
 			BuycraftPlugin::getInstance()->getLogger()->info("Executing login commands for " . $event->getPlayer()->getName() . "...");
-			Server::getInstance()->getScheduler()->scheduleAsyncTask(new PlayerCommandExecutor(BuycraftPlugin::getInstance()->getPluginApi(),
+			Server::getInstance()->getAsyncPool()->submitTask(new PlayerCommandExecutor(BuycraftPlugin::getInstance()->getPluginApi(),
 				$duePlayer));
 		}
 	}
