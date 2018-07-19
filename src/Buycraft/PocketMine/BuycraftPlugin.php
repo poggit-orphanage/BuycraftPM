@@ -132,7 +132,7 @@ class BuycraftPlugin extends PluginBase{
 	 */
 	public function changeApi(PluginApi $newApi, $information){
 		$this->pluginApi = $newApi;
-		$this->getScheduler()->cancelTasks($this);
+		$this->getScheduler()->cancelAllTasks();
 		$this->startInitialTasks();
 
 		// change information if required (for secret command)
