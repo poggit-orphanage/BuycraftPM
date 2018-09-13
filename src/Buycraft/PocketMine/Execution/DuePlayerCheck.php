@@ -32,7 +32,7 @@ class DuePlayerCheck extends AsyncTask{
 	 *
 	 * @return void
 	 */
-	public function onRun(){
+	public function onRun() : void {
 		$page = 1;
 		$allDue = array();
 
