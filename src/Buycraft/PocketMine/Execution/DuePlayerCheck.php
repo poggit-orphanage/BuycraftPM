@@ -32,7 +32,7 @@ class DuePlayerCheck extends AsyncTask{
 	 *
 	 * @return void
 	 */
-	public function onRun(){
+	public function onRun() : void {
 		$page = 1;
 		$allDue = array();
 
@@ -62,7 +62,7 @@ class DuePlayerCheck extends AsyncTask{
 		));
 	}
 
-	public function onCompletion(Server $server){
+	public function onCompletion(Server $server) : void {
 		$result = $this->getResult();
 		BuycraftPlugin::getInstance()->getLogger()->info("Found " . count($result['all_due']) . " due player(s).");
 		BuycraftPlugin::getInstance()->setAllDue($result['all_due']);
