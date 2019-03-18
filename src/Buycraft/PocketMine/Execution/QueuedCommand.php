@@ -3,71 +3,101 @@
 namespace Buycraft\PocketMine\Execution;
 
 
+use Buycraft\PocketMine\BuycraftPlugin;
 use pocketmine\Server;
 
-class QueuedCommand{
-	private $command;
-	private $username;
-	private $queuedTime;
-	private $needOnline;
+class QueuedCommand
+{
+    private $command;
+    private $username;
+    private $queuedTime;
+    private $needOnline;
 
-	/**
-	 * QueuedCommand constructor.
-	 * @param $command mixed
-	 * @param $username string
-	 * @param $needOnline boolean
-	 */
-	public function __construct($command, $username, $needOnline){
-		$this->command = $command;
-		$this->username = $username;
-		$this->queuedTime = time();
-		$this->needOnline = $needOnline;
-	}
+    /**
+     * QueuedCommand constructor.
+     * @param $command mixed
+     * @param $username string
+     * @param $needOnline boolean
+     */
+    public function __construct($command, $username, $needOnline, $xuid = '')
+    {
+        $this->command = $command;
+        $this->username = $username;
+        $this->xuid = $xuid;
+        $this->queuedTime = time();
+        $this->needOnline = $needOnline;
+    }
 
-	public function getCommandId(){
-		return $this->command->id;
-	}
+    public function getCommandId()
+    {
+        return $this->command->id;
+    }
 
-	public function canExecute(){
-		$player = Server::getInstance()->getPlayerExact($this->username);
 
-		if($this->needOnline){
-			if($player == NULL){
-				return false;
-			}
-		}
 
-		// Check delay.
-		if(property_exists($this->command->conditions, "delay")){
-			$after = $this->queuedTime + (int) $this->command->conditions->delay;
-			if(time() < $after){
-				return false;
-			}
-		}
+    public function canExecute()
+    {
+        $plugin = BuycraftPlugin::getInstance();
+        $player = $plugin->getPlayer(Server::getInstance(), $this->username, $this->xuid);
 
-		// Check inventory slots.
-		if(property_exists($this->command->conditions, "slots")){
-			// Needing inventory slots implies that the player is online, too.
-			if($player == NULL){
-				return false;
-			}
+        if ($this->needOnline) {
+            if (!$player) {
+                return false;
+            }
+        }
 
-			$count = 0;
-			for($i = 0; $i < $player->getInventory()->getSize(); $i++){
-				if($player->getInventory()->getItem($i)->getId() === 0){
-					$count++;
-				}
-			}
+        // Check delay.
+        if (property_exists($this->command->conditions, "delay")) {
+            $after = $this->queuedTime + (int)$this->command->conditions->delay;
+            if (time() < $after) {
+                return false;
+            }
+        }
 
-			if($count < (int) $this->command->conditions->slots){
-				return false;
-			}
-		}
+        // Check inventory slots.
+        if (property_exists($this->command->conditions, "slots")) {
+            // Needing inventory slots implies that the player is online, too.
+            if ($player == NULL) {
+                return false;
+            }
 
-		return true;
-	}
+            $count = 0;
+            for ($i = 0; $i < $player->getInventory()->getSize(); $i++) {
+                if ($player->getInventory()->getItem($i)->getId() === 0) {
+                    $count++;
+                }
+            }
 
-	public function getFinalCommand(){
-		return preg_replace('/[{\\(<\\[](name|player|username)[}\\)>\\]]/i', $this->username, $this->command->command);
-	}
+            if ($count < (int)$this->command->conditions->slots) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public function getFinalCommand()
+    {
+        $command = str_replace(
+            [
+                '{name}',
+                '{player}',
+                '{username}',
+                '{uuid}',
+                '{xuid}',
+                '{id}'
+            ],
+            [
+                $this->username,
+                $this->username,
+                $this->username,
+                $this->xuid,
+                $this->xuid,
+                $this->xuid,
+            ],
+            $this->command->command
+        );
+
+        return $command;
+    }
 }
